@@ -1,8 +1,29 @@
 import requests,xmltodict
 from tkinter import *
 from tkinter import ttk
+from tkinter import messagebox
+
 stationsLijst = []
-vertrekXML = {}
+columns = ("Tijd", "Vervoerder", "Soort trein", "Bestemming", "Spoor")
+
+class reisInformatie:
+
+    def __init__(self,master):
+        frame = Frame(master)
+        frame.grid(row=2,column=2)
+
+        self.loadButton = Button(frame, text="Load", command=getVertrekTijden)
+        self.loadButton.pack(side=LEFT)
+
+        self.quitButton = Button(frame,text="Quit",command=frame.quit)
+        self.quitButton.pack(side=RIGHT)
+
+        self.quitButton.config(background="#003399")
+        self.quitButton.config(foreground="white")
+
+        self.loadButton.config(background="#003399")
+        self.loadButton.config(foreground="white")
+
 
 def getStationsLijst():
     auth = ('bob.vanaanhold@student.hu.nl', '9MrYI28kCZWxrk7cBexYHGSEaNujLq7SQDcuSI_HUlwf8N4GteMP4g')
@@ -14,47 +35,46 @@ def getStationsLijst():
             stationsLijst.append(langeNaam)
     return stationsXML
 
-def getVertrekTijden(station):
-    global vertrekXML
-    getStationsLijst()
-    if station not in stationsLijst:
-        print("Station niet herkend")
+def getVertrekTijden():
+    if station.get() not in stationsLijst:
+        messagebox._show("Fout","Station niet herkend")
     else:
-        voorkeuren = {'station':station}
+        for i in tree.get_children():
+            tree.delete(i)
+        voorkeuren = {'station':station.get()}
         auth = ('bob.vanaanhold@student.hu.nl', '9MrYI28kCZWxrk7cBexYHGSEaNujLq7SQDcuSI_HUlwf8N4GteMP4g')
         r = requests.get("http://webservices.ns.nl/ns-api-avt",params=voorkeuren, auth=auth)
         vertrekXML = xmltodict.parse(r.text)
-        if False:
-            print('Dit zijn de vertrekkende treinen:')
-            for vertrek in vertrekXML['ActueleVertrekTijden']['VertrekkendeTrein']:
-                eindbestemming = vertrek['EindBestemming']
-                vertrektijd = vertrek['VertrekTijd']
-                vertrektijd = vertrektijd[11:16]
-                print('Om '+vertrektijd+' vertrekt een trein naar '+ eindbestemming)
+        for column in columns:
+            tree.heading(column, text=column.title())
+        for trein in vertrekXML['ActueleVertrekTijden']['VertrekkendeTrein']:
+            eindBestemming = trein['EindBestemming']
+            vertrekTijd = trein['VertrekTijd']
+            vertrekTijd = vertrekTijd[11:16]
+            vervoerder = trein['Vervoerder']
+            treinSoort = trein['TreinSoort']
+            vertrekSpoor = trein['VertrekSpoor']['#text']
+            if trein['VertrekSpoor']['@wijziging'] == "true":
+                vertrekSpoor += " Spoor gewijzigd"
+            tree.insert('', 'end', values=(vertrekTijd, vervoerder, treinSoort, eindBestemming, vertrekSpoor))
         return vertrekXML
 
+def getStoringen():
+    auth = ('bob.vanaanhold@student.hu.nl', '9MrYI28kCZWxrk7cBexYHGSEaNujLq7SQDcuSI_HUlwf8N4GteMP4g')
+    parameters = {'station':stations.get, 'actual':'true'}
+    r = requests.get("http://webservices.ns.nl/ns-api-storingen",auth=auth,params=parameters)
+    print(r.text)
 
-#def toDict(a):
-#    global legeDict
-#    legeDict = a
-
-def main():
-    getStationsLijst()
-    root = Tk()
-    root.title("NS Reisinformatie")
-    stationvar = StringVar()
-    beginStation = ttk.Combobox(root,textvariable=stationvar)
-    beginStation.pack()
-    beginStation['values'] = stationsLijst
-
-    widget = Button(None, text ='Klik hier maar eens.')
-    widget.pack()
-    widget.bind('<Button-1>', print('Hello!!'))
-
-    loadButton = ttk.Button(root,text="Load")
-    loadButton.pack()
-    loadButton.config(command=lambda: print(getVertrekTijden(beginStation.get())))
-    root.mainloop()
-
-main()
-
+root = Tk()
+getStationsLijst()
+station = StringVar(root)
+station.set("Utrecht Centraal")
+beginStation = ttk.Combobox(root, textvariable=station)
+beginStation.grid(row=1,column=2)
+beginStation['values'] = stationsLijst
+tree = ttk.Treeview(columns= columns, show="headings")
+tree.grid(row=1,column=1)
+root.title("NS Vertrektijden")
+root.configure(background='#fece22')
+b = reisInformatie(root)
+root.mainloop()
