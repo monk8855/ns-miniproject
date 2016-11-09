@@ -91,13 +91,6 @@ def getVertrekTijden():
         except KeyError:
             tree.insert('', 'end', values=("Geen", "reisdata", "gevonden", "probeer", "opnieuw"), tags = ('rood',))
 
-# Functie in aanbouw om storingen ook te weergeven
-#def getStoringen():
-#    auth = ('bob.vanaanhold@student.hu.nl', '9MrYI28kCZWxrk7cBexYHGSEaNujLq7SQDcuSI_HUlwf8N4GteMP4g')
-#    parameters = {'station': station.get, 'actual': 'true'}
-#    r = requests.get("http://webservices.ns.nl/ns-api-storingen", auth=auth, params=parameters)
-#    print(r.text)
-
 
 root = Tk()
 root.title("NS Vertrektijden")
@@ -117,4 +110,5 @@ tree.tag_configure('rood', background='red', foreground='white',font=('Arial', 1
 getVertrekTijden()
 root.mainloop()
 #NS logo toevoegen
+
 
