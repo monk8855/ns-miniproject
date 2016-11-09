@@ -2,7 +2,7 @@ import requests, xmltodict
 from tkinter import *
 from tkinter import ttk
 from tkinter import messagebox
-from PIL import Image, ImageTk #Vooraf pillow inladen, aangezien PIL niet werkt op python 3.x
+from PIL import Image, ImageTk #Vooraf pillow inladen, aangezien de originele PIL niet werkt op python 3.x
 
 stationsLijst = []
 
@@ -42,12 +42,12 @@ class ReisInformatie:
         self.quitButton.config(foreground="white")
 
 
-#aanvragen van stations bij de NS, en deze wegzetten in de stationslijst
+# aanvragen van stations bij de NS, en deze wegzetten in de stationslijst
 def getStationsLijst():
     auth = ('bob.vanaanhold@student.hu.nl', '9MrYI28kCZWxrk7cBexYHGSEaNujLq7SQDcuSI_HUlwf8N4GteMP4g')
     r = requests.get("http://webservices.ns.nl/ns-api-stations-v2", auth=auth)
     
-    #omzetten van XML naar een dict
+    # omzetten van XML naar een dict
     stationsXML = xmltodict.parse(r.text)
     for naam in stationsXML['Stations']['Station']:
         if naam['Land'] == "NL":
@@ -58,8 +58,7 @@ def getStationsLijst():
 # Table fill functie
 def getVertrekTijden():
     
-    # Mocht de vrije oinput niet kloppen word er een messagebox weergegeven
-    
+    # Mocht de vrije input niet kloppen, wordt er een messagebox weergegeven    
     if station.get() not in stationsLijst:
         messagebox._show("Fout", "Station niet herkend")
     else:
@@ -68,17 +67,17 @@ def getVertrekTijden():
         for i in tree.get_children():
             tree.delete(i)
         try:
-            #API call en xmltodict
+            # aanvraag vertrektijden bij NS, en omzetten naar dict
             voorkeuren = {'station': station.get()}
             auth = ('bob.vanaanhold@student.hu.nl', '9MrYI28kCZWxrk7cBexYHGSEaNujLq7SQDcuSI_HUlwf8N4GteMP4g')
             r = requests.get("http://webservices.ns.nl/ns-api-avt", params=voorkeuren, auth=auth)
             vertrekXML = xmltodict.parse(r.text)
             
-            # Plaatst de columns in de tabel
+            # Columns in de tabel plaatsen
             for column in columns:
                 tree.heading(column, text=column.title())
             
-            # Vult de tabel met rijen aan info
+            # Tabel opvullen met info uit de dict
             for trein in vertrekXML['ActueleVertrekTijden']['VertrekkendeTrein']:
                 eindBestemming = trein['EindBestemming']
                 vertrekTijd = trein['VertrekTijd']
