@@ -2,10 +2,11 @@ import requests, xmltodict
 from tkinter import *
 from tkinter import ttk
 from tkinter import messagebox
-# Pillow inladen
-from PIL import Image, ImageTk
+from PIL import Image, ImageTk #Vooraf pillow inladen, aangezien PIL niet werkt op python 3.x
 
 stationsLijst = []
+
+#Kolomnamen voor weergave vertrektijden
 columns = ("Tijd", "Vervoerder", "Soort trein", "Bestemming", "Spoor")
 
 # Checken of configuratie file aanwezig is
@@ -17,7 +18,6 @@ try:
 except FileNotFoundError:
     messagebox._show("Fout!", "machineLocatie.csv niet gevonden!", _icon="error")
     quit()
-
 
 # Class voor de buttons en frame
 class ReisInformatie:
@@ -39,10 +39,12 @@ class ReisInformatie:
         self.quitButton.config(foreground="white")
 
 
-# Functie die de stationsLijst vult.
+#aanvragen van stations bij de NS, en deze wegzetten in de stationslijst
 def getStationsLijst():
     auth = ('bob.vanaanhold@student.hu.nl', '9MrYI28kCZWxrk7cBexYHGSEaNujLq7SQDcuSI_HUlwf8N4GteMP4g')
     r = requests.get("http://webservices.ns.nl/ns-api-stations-v2", auth=auth)
+    
+    #omzetten van XML naar een dict
     stationsXML = xmltodict.parse(r.text)
     for naam in stationsXML['Stations']['Station']:
         if naam['Land'] == "NL":
@@ -52,7 +54,9 @@ def getStationsLijst():
 
 # Table fill functie
 def getVertrekTijden():
-    # Mocht de vrije input niet kloppen word er een messagebox weergegeven
+    
+    # Mocht de vrije oinput niet kloppen word er een messagebox weergegeven
+    
     if station.get() not in stationsLijst:
         messagebox._show("Fout", "Station niet herkend")
     else:
@@ -66,9 +70,11 @@ def getVertrekTijden():
             auth = ('bob.vanaanhold@student.hu.nl', '9MrYI28kCZWxrk7cBexYHGSEaNujLq7SQDcuSI_HUlwf8N4GteMP4g')
             r = requests.get("http://webservices.ns.nl/ns-api-avt", params=voorkeuren, auth=auth)
             vertrekXML = xmltodict.parse(r.text)
-            # Zorgt voor de coluns in de tabel
+            
+            # Plaatst de columns in de tabel
             for column in columns:
                 tree.heading(column, text=column.title())
+            
             # Vult de tabel met rijen aan info
             for trein in vertrekXML['ActueleVertrekTijden']['VertrekkendeTrein']:
                 eindBestemming = trein['EindBestemming']
@@ -79,42 +85,53 @@ def getVertrekTijden():
                 vertrekSpoor = trein['VertrekSpoor']['#text']
                 if trein['VertrekSpoor']['@wijziging'] == "true":
                     vertrekSpoor += " Spoor gewijzigd"
+                
                 #Rode kleur voor gewijzigde sporen
                 if "Spoor gewijzigd" in vertrekSpoor:
                     tree.insert('', 'end', values=(vertrekTijd, vervoerder, treinSoort, eindBestemming, vertrekSpoor), tags = ('rood',))
+                
                 #Blauwe en wit voor opmaak
                 elif colorCondition:
                     tree.insert('', 'end', values=(vertrekTijd, vervoerder, treinSoort, eindBestemming, vertrekSpoor), tags = ('blauw',))
                 else:
                     tree.insert('', 'end', values=(vertrekTijd, vervoerder, treinSoort, eindBestemming, vertrekSpoor), tags = ('wit',))
                 colorCondition = not colorCondition
-        #Error voor als er geen reisdata gevonden is
+        
+        # Error voor als er geen reisdata gevonden is, komt vaak voor bij 'NS-bus' stations
         except KeyError:
             tree.insert('', 'end', values=("Geen", "reisdata", "gevonden", "probeer", "opnieuw"), tags = ('rood',))
 
 
 root = Tk()
 root.title("NS Vertrektijden")
-getStationsLijst()
+getStationsLijst() # eenmalig aanvragen van stationslijst
+
 station = StringVar(root)
 station.set(standaardStation)
+
+# Selecteren van stations in de combobox
 beginStation = ttk.Combobox(root, textvariable=station, font=('Arial', 13))
 beginStation.grid(row=2, column=2)
 beginStation['values'] = stationsLijst
+
+# Locatie van tabel in frame
 tree = ttk.Treeview(columns=columns, show="headings")
 tree.grid(row=1, column=1, rowspan=3)
+
+# Scrollbar in tree view
 scrollbar = Scrollbar(root)
 scrollbar.grid(sticky=NE + S,row=1,column=1, rowspan=3)
 scrollbar.config(command = tree.yview )
 tree.configure(yscrollcommand=scrollbar.set)
 root.configure(background='#fece22')
-# Voor NS logo
+
+# Weergave NS logo
 try:
     image = Image.open("NS-thumb.png")
     photo = ImageTk.PhotoImage(image)
     label = Label(image=photo, background='#fece22')
     label.grid(row=1, column=2)
-except FileNotFoundError:
+except FileNotFoundError:   # Indien file niet aanwezig
     pass
 
 b = ReisInformatie(root)
