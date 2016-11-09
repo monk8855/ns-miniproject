@@ -14,6 +14,9 @@ try:
     with open("machineLocatie.csv") as file:
         standaardStation = file.readline()
         standaardStation = standaardStation.rstrip()
+        if standaardStation is "":
+            messagebox._show("Fout!", "Geen station ingevoerd in machineLocatie.csv", _icon="error")
+            quit()
 
 except FileNotFoundError:
     messagebox._show("Fout!", "machineLocatie.csv niet gevonden!", _icon="error")
